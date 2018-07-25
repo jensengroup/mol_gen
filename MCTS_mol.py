@@ -1,8 +1,5 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from rdkit.Chem import Draw
-from rdkit.Chem.Draw.MolDrawing import MolDrawing
-from rdkit.Chem.Draw import IPythonConsole
 from rdkit.Chem import Descriptors
 from rdkit.Chem import rdmolops
 
@@ -17,13 +14,16 @@ import sascorer
 
 from io import StringIO
 import sys
-sio = sys.stderr = StringIO()
+#sio = sys.stderr = StringIO()
+
+from rdkit import rdBase
+rdBase.DisableLog('rdApp.error')
 
 def logP_score(m):
   logp = Descriptors.MolLogP(m)
   SA_score = -sascorer.calculateScore(m)
   #cycle_list = nx.cycle_basis(nx.Graph(rdmolops.GetAdjacencyMatrix(m)))
-  cycle_list = mol1.GetRingInfo().AtomRings #remove networkx dependence
+  cycle_list = mol1.GetRingInfo().AtomRings() #remove networkx dependence
   if len(cycle_list) == 0:
       cycle_length = 0
   else:
