@@ -23,7 +23,7 @@ def logP_score(m):
   logp = Descriptors.MolLogP(m)
   SA_score = -sascorer.calculateScore(m)
   #cycle_list = nx.cycle_basis(nx.Graph(rdmolops.GetAdjacencyMatrix(m)))
-  cycle_list = mol1.GetRingInfo().AtomRings() #remove networkx dependence
+  cycle_list = m.GetRingInfo().AtomRings() #remove networkx dependence
   if len(cycle_list) == 0:
       cycle_length = 0
   else:
@@ -95,6 +95,28 @@ def expand_small_rings(mol):
     mol = run_rxn(rxn_smarts,mol)
 
   return mol
+
+def scale_p_ring(rxn_smarts_ring_list,p_ring,new_prob_double):
+  p_single = []
+  p_double = []
+  for smarts,p in zip(rxn_smarts_ring_list,p_ring):
+    if '=' in smarts:
+      p_double.append(p)
+    else:
+      p_single.append(p)
+    
+  prob_double, prob_single = sum(p_double), sum(p_single)
+  scale_double = new_prob_double/prob_double
+  scale_single = (1.0 - new_prob_double)/(1-prob_double)
+  for i, smarts in enumerate(rxn_smarts_ring_list):
+    if '=' in smarts:
+      p_ring[i] *= scale_double
+    else:
+      p_ring[i] *= scale_single
+      
+  print scale_double,scale_single*prob_single,sum(p_ring)
+  
+  return p_ring
 
 # code lightly modified from https://github.com/haroldsultan/MCTS/blob/master/mcts.py
 import random
@@ -293,6 +315,10 @@ rxn_smarts_ring_list = pickle.load(open('rs_ring.p','r'))
 rxn_smarts_list = pickle.load(open('r_s1.p','r'))
 p = pickle.load(open('p1.p','r'))
 
+prob_double = 0.8
+p_ring = scale_p_ring(rxn_smarts_ring_list,p_ring,prob_double)
+p_make_ring = p_ring
+
 max_logP = [[-99999.,'']]
 count = 0
 
@@ -302,7 +328,7 @@ mol = Chem.MolFromSmiles(smiles)
 current_node = Node(State(mol,smiles))
 #current_node.add_child(State(mol,smiles))
 
-num_sims = 100
+num_sims = 20000
 
 t0 = time.time()
 current_node=UCTSEARCH(num_sims,current_node)
