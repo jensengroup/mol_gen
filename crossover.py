@@ -137,8 +137,11 @@ def crossover_non_ring(parent_A,parent_B):
 
 def crossover(parent_A,parent_B):
   parent_smiles = [Chem.MolToSmiles(parent_A),Chem.MolToSmiles(parent_B)]
-  Chem.Kekulize(parent_A,clearAromaticFlags=True)
-  Chem.Kekulize(parent_B,clearAromaticFlags=True)
+  try:
+	  Chem.Kekulize(parent_A,clearAromaticFlags=True)
+	  Chem.Kekulize(parent_B,clearAromaticFlags=True)
+  except:
+  	pass
   for i in range(10):
     if random.random() <= 0.5:
       #print 'non-ring crossover'
