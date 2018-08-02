@@ -328,7 +328,7 @@ mol = Chem.MolFromSmiles(smiles)
 current_node = Node(State(mol,smiles))
 #current_node.add_child(State(mol,smiles))
 
-num_sims = 20000
+num_sims = 200
 
 t0 = time.time()
 current_node=UCTSEARCH(num_sims,current_node)
