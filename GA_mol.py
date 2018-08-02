@@ -94,10 +94,11 @@ def reproduce(mating_pool,population_size,mutation_rate):
     #print Chem.MolToSmiles(parent_A),Chem.MolToSmiles(parent_B)
     new_child = co.crossover(parent_A,parent_B)
     #print new_child
-    new_child = mu.mutate(new_child,mutation_rate)
-    #print "after mutation",new_child
     if new_child != None:
-    	new_population.append(new_child)
+	    new_child = mu.mutate(new_child,mutation_rate)
+	    #print "after mutation",new_child
+	    if new_child != None:
+	    	new_population.append(new_child)
 
   
   return new_population
@@ -123,12 +124,18 @@ mutation_rate = 0.01
 co.average_size = 39.15
 co.size_stdev = 3.50
 
+print 'population_size', population_size
+print 'generations', generations
+print 'mutation_rate', mutation_rate
+print 'average_size/size_stdev', co.average_size, co.size_stdev
+print ''
+
 file_name = '1000.smi'
 
 results = []
 size = []
 t0 = time.time()
-for i in range(2):
+for i in range(10):
 	max_score = [-99999.,'']
 	count = 0
 	population = make_initial_population(population_size,file_name)
@@ -139,11 +146,12 @@ for i in range(2):
 	  mating_pool = make_mating_pool(population,fitness)
 	  population = reproduce(mating_pool,population_size,mutation_rate)
 
-	print max_score[0], max_score[1], Chem.MolFromSmiles(max_score[1]).GetNumAtoms()
+	print i, max_score[0], max_score[1], Chem.MolFromSmiles(max_score[1]).GetNumAtoms()
 	results.append(max_score[0])
 	size.append(Chem.MolFromSmiles(max_score[1]).GetNumAtoms())
 
 t1 = time.time()
+print ''
 print 'time ',t1-t0
 print max(results),np.array(results).mean(),np.array(results).std()
 print max(size),np.array(size).mean(),np.array(size).std()
