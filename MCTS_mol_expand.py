@@ -11,6 +11,7 @@ import pickle
 
 #import networkx as nx
 import sascorer
+import mutate as mu
 
 from io import StringIO
 import sys
@@ -85,9 +86,8 @@ def add_atom(mol):
       rxn_smarts = np.random.choice(rxn_smarts_list, p=p)
     
   mol = run_rxn(rxn_smarts,mol)
-  smiles = Chem.MolToSmiles(mol)
 
-  return mol, smiles
+  return mol
 
 def expand_small_rings(mol):      
   rxn_smarts = '[*;r3,r4;!R2:1][*;r3,r4:2]>>[*:1]C[*:2]'
@@ -155,7 +155,11 @@ class State():
     #nextmove=random.choice(self.MOVES)
     smiles = self.smiles
     for i in range(100):
-      mol, smiles = add_atom(self.mol)
+      mol = add_atom(self.mol)
+      #new_mol = mu.mutate(self.mol,mutation_rate)
+      #if new_mol != None:
+      #  mol = new_mol
+      smiles = Chem.MolToSmiles(mol)
       if smiles != self.smiles:
         break
 
@@ -177,19 +181,19 @@ class State():
     return False
 
   def reward(self):
-    global max_logP
+    global max_score
     global count
     count += 1
     #logP = Descriptors.MolLogP(self.mol)
     logP = logP_score(self.mol)
  
-    if logP > max_logP[0][0]:
-      max_logP.insert(0,[logP,self.smiles])
-      return 1.0
-    else:
-      return 0.0
+    if logP > max_score[0]:
+      max_score = [logP,self.smiles]
+    #  return 1.0
+    #else:
+    #  return 0.0
 
-    #return logP/(1+abs(logP))
+    return logP/(1+abs(logP))
  
   def __hash__(self):
     return int(hashlib.md5(str(self.smiles).encode('utf-8')).hexdigest(),16)
@@ -313,8 +317,7 @@ logP_std= np.std(logP_values)
 cycle_mean = np.mean(cycle_scores)
 cycle_std=np.std(cycle_scores)
 
-average_size, size_stdev = 24., 4.
-average_size, size_stdev = 40., 5.
+average_size, size_stdev = 39.15, 3.50
 
 p_ring = pickle.load(open('p_ring.p','r'))
 p_make_ring = p_ring
@@ -324,23 +327,39 @@ rxn_smarts_ring_list = pickle.load(open('rs_ring.p','r'))
 rxn_smarts_list = pickle.load(open('r_s1.p','r'))
 p = pickle.load(open('p1.p','r'))
 
-prob_double = 0.8
-p_ring = scale_p_ring(rxn_smarts_ring_list,p_ring,prob_double)
-p_make_ring = p_ring
+#prob_double = 0.8
+#p_ring = scale_p_ring(rxn_smarts_ring_list,p_ring,prob_double)
+#p_make_ring = p_ring
 
-max_logP = [[-99999.,'']]
-count = 0
+#mutation_rate = 0.01
+num_sims = 40
 
-smiles = 'CC'
-mol = Chem.MolFromSmiles(smiles)
+print 'num_sims',num_sims
+#print 'mutation_rate', mutation_rate
+print 'average_size, size_stdev', average_size, size_stdev 
+print 'max_children = 25'
+print ''
 
-current_node = Node(State(mol,smiles))
-#current_node.add_child(State(mol,smiles))
-
-num_sims = 20
-
+results = []
+size = []
 t0 = time.time()
-current_node=UCTSEARCH(num_sims,current_node)
-t1 = time.time()
+for i in range(10):
+  max_score = [-99999.,'']
+  count = 0
 
-print t1-t0, count, max_logP
+  smiles = 'CC'
+  mol = Chem.MolFromSmiles(smiles)
+
+  current_node = Node(State(mol,smiles))
+  current_node = UCTSEARCH(num_sims,current_node)
+  print i, max_score[0], max_score[1], Chem.MolFromSmiles(max_score[1]).GetNumAtoms()
+  results.append(max_score[0])
+  size.append(Chem.MolFromSmiles(max_score[1]).GetNumAtoms())
+
+t1 = time.time()
+print ''
+print 'time, count ',t1-t0, count
+print max(results),np.array(results).mean(),np.array(results).std()
+print max(size),np.array(size).mean(),np.array(size).std()
+
+
