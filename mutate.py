@@ -5,9 +5,12 @@ import random
 import numpy as np
 import crossover as co
 
-from io import StringIO
-import sys
-sio = sys.stderr = StringIO()
+#from io import StringIO
+#import sys
+#sio = sys.stderr = StringIO()
+
+from rdkit import rdBase
+rdBase.DisableLog('rdApp.error')
 
 def delete_atom():
   choices = ['[*:1]~[D1:2]>>[*:1]', '[*:1]~[D2:2]~[*:3]>>[*:1]-[*:3]',
